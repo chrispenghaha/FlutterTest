@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/api/Address.dart';
 import 'package:flutter_app/api/Api.dart';
-import 'package:flutter_app/model/article/ActicleListDataModel.dart';
-import 'package:flutter_app/model/article/ArticleListModel.dart';
+import 'package:flutter_app/api/ResultData.dart';
+import 'package:flutter_app/model/article/ArticleItemModel.dart';
 import 'package:flutter_app/model/banner/BannerListModel.dart';
 import 'package:flutter_app/widget/PullLoadWidget.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
@@ -16,10 +16,14 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    // ignore: mixin_inherits_from_not_object
-    with AutomaticKeepAliveClientMixin<HomePage>, RefreshListState<HomePage> {
+class _HomePageState
+    extends State<HomePage> // ignore: mixin_inherits_from_not_object
+    with
+        AutomaticKeepAliveClientMixin<HomePage>,
+        // ignore: mixin_inherits_from_not_object
+        RefreshListState<HomePage> {
   List<String> _images = new List();
+  int _totalPage = 0;
 
   @override
   Future<Null> handleRefresh() async {
@@ -27,44 +31,46 @@ class _HomePageState extends State<HomePage>
       return null;
     }
     isLoading = true;
+    pullLoadWidgetControl.dataList.clear();
+    _images.clear();
     page = 1;
+    _loadBannerData();
     var res = await HttpManager.getRequest(Address.getHomePage(page - 1));
     if (res != null && res.result) {
       var data = res.data;
-      ArticleListDataModel listDataModel = ArticleListDataModel.fromJson(data);
-      pullLoadWidgetControl.dataList = listDataModel.datas;
+      var data2 = data['data']['datas'];
+      _totalPage = data['data']['pageCount'];
+      for (var sub in data2) {
+        var articleItemModel = ArticleItemModel.fromJson(sub);
+        pullLoadWidgetControl.dataList.add(articleItemModel);
+      }
     }
     setState(() {
-      pullLoadWidgetControl.needLoadMore = false;
+      pullLoadWidgetControl.needLoadMore = page < _totalPage;
     });
     isLoading = false;
     return null;
   }
 
+  @override
   @override
   requestLoadMore() async {
-    if (isLoading) {
-      return null;
-    }
-    isLoading = true;
     page++;
-    await HttpManager.getRequest(Address.getHomePage(page - 1));
+    var res = await HttpManager.getRequest(Address.getHomePage(page - 1));
+    if (res != null && res.result) {
+      var data = res.data;
+      var data2 = data['data']['datas'];
+      _totalPage = data['data']['pageCount'];
+      for (var sub in data2) {
+        var articleItemModel = ArticleItemModel.fromJson(sub);
+        pullLoadWidgetControl.dataList.add(articleItemModel);
+      }
+    }
     setState(() {
-      pullLoadWidgetControl.needLoadMore = false;
+      pullLoadWidgetControl.needLoadMore = page < _totalPage;
     });
     isLoading = false;
-    return null;
-  }
-
-  @override
-  requestRefresh() async {
-    return super.requestRefresh();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadBannerData();
+    return new ResultData(res.data['data']['datas'],true,0);
   }
 
   @override
@@ -80,7 +86,9 @@ class _HomePageState extends State<HomePage>
             if (index == 0) {
               return _buildBanner(context);
             } else {
-              return _getItem(pullLoadWidgetControl.dataList[index]);
+              if (pullLoadWidgetControl.dataList.length > 0) {
+                return _getItem(pullLoadWidgetControl.dataList[index]);
+              }
             }
           },
           handleRefresh,
@@ -158,6 +166,8 @@ class _HomePageState extends State<HomePage>
 
   @override
   void didChangeDependencies() {
+    pullLoadWidgetControl.needLoadMore = true;
+    pullLoadWidgetControl.dataList = new List<ArticleItemModel>();
     showRefreshLoading();
     super.didChangeDependencies();
   }
@@ -183,14 +193,14 @@ class _HomePageState extends State<HomePage>
               children: <Widget>[
                 new Column(
                   children: <Widget>[
-                    new Text("${item["title"]}".trim(),
+                    new Text(item.title,
                         style: new TextStyle(
                           color: Colors.black,
                           fontSize: 20.0,
                         ),
                         textAlign: TextAlign.left),
                     new Text(
-                      "${item["desc"]}",
+                      item.desc,
                       maxLines: 3,
                     )
                   ],
@@ -200,13 +210,29 @@ class _HomePageState extends State<HomePage>
         new ClipRect(
           child: new FadeInImage.assetNetwork(
             placeholder: "images/1.jpg",
-            image: "${item['envelopePic']}",
+            image: item.envelopePic,
             width: 50.0,
             height: 50.0,
             fit: BoxFit.fitWidth,
           ),
         ),
       ],
+    );
+  }
+
+  Widget getNullWidget() {
+    return new Container(
+      height: 300.0,
+      child: new Center(
+          child: new Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          new CircularProgressIndicator(
+            strokeWidth: 1.0,
+          ),
+          new Text("正在加载"),
+        ],
+      )),
     );
   }
 

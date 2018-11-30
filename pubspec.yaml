@@ -30,7 +30,6 @@ dependencies:
   flutter_slidable: ^0.4.3
   flutter_spinkit: ^2.0.1
   shared_preferences: ^0.4.2
-  fluttertoast: 2.0.9
 
 dev_dependencies:
   flutter_test:

@@ -83,12 +83,10 @@ class _PullLoadWidgetState extends State<PullLoadWidget> {
 
   ///根据配置状态返回实际列表渲染Item
   _getItem(int index) {
-    if (!control.needHeader && index == control.dataList.length && control.dataList.length != 0) {
+    if (!control.needHeader && (index == control.dataList.length||index==control.dataList.length+1) && control.dataList.length != 0) {
       ///如果不需要头部，并且数据不为0，当index等于数据长度时，渲染加载更多Item（因为index是从0开始）
       return _buildProgressIndicator();
-    } else if (control.needHeader &&
-        index == _getListCount() - 1 &&
-        control.dataList.length != 0) {
+    } else if (control.needHeader && index == _getListCount() - 1 && control.dataList.length != 0) {
       ///如果需要头部，并且数据不为0，当index等于实际渲染长度 - 1时，渲染加载更多Item（因为index是从0开始）
       return _buildProgressIndicator();
     } else if (!control.needHeader && control.dataList.length == 0) {

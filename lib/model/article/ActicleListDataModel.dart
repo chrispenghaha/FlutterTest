@@ -1,9 +1,5 @@
 import 'package:flutter_app/model/article/ArticleItemModel.dart';
-import 'package:json_annotation/json_annotation.dart';
 
-part 'ArticleListDataModel.g.dart';
-
-@JsonSerializable()
 class ArticleListDataModel {
   int curpage;
   List<ArticleItemModel> datas;
@@ -16,6 +12,12 @@ class ArticleListDataModel {
   ArticleListDataModel(this.curpage, this.datas, this.offset, this.over,
       this.pageCount, this.size, this.total);
 
-  factory ArticleListDataModel.fromJson(Map<String, dynamic> json) =>
-      _$ArticleListDataModelFromJson(json);
+  ArticleListDataModel.fromJson(Map<String, dynamic> json)
+      : curpage = json['curpage'],
+        datas = json['datas'],
+        over = json['over'],
+        pageCount = json['pageCount'],
+        size = json['size'],
+        total = json['total'],
+        offset = json['offset'];
 }
